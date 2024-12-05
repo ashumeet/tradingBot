@@ -68,7 +68,6 @@ def print_decisions(decisions):
 
 
 # Decode ChatGPT response
-# Decode ChatGPT response
 def decode_chat_gpt_response(response):
     """
     Decodes the structured ChatGPT response into buy/sell decisions and reasoning.
