@@ -17,23 +17,7 @@ def analyze_and_decide(portfolio, stock_data):
     
     common.print_log("ChatGPT analysis complete. Parsing results...", level="success")
     
-    # Parse ChatGPT response
-    decisions = {"buy": [], "sell": [], "reasoning": []}
-    lines = response.splitlines()
-    for line in lines:
-        if line.startswith("BUY"):
-            _, stock, qty, reason = line.split(":", 3)
-            decisions["buy"].append((stock.strip(), int(qty.strip())))
-            decisions["reasoning"].append(f"BUY {stock.strip()}: {reason.strip()}")
-        elif line.startswith("SELL"):
-            _, stock, qty, reason = line.split(":", 3)
-            decisions["sell"].append((stock.strip(), int(qty.strip())))
-            decisions["reasoning"].append(f"SELL {stock.strip()}: {reason.strip()}")
-        elif line.startswith("HOLD"):
-            decisions["reasoning"].append(line.strip())
-        else:
-            decisions["reasoning"].append(f"UNKNOWN: {line.strip()}") 
-    return decisions
+    return common.decode_chat_gpt_response(response)
 
 # Main trading loop
 def run_trading_day():
