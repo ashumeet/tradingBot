@@ -1,5 +1,5 @@
 import openai, config
-from utils.common import print_log
+import utils.common as common
 
 
 # Use keys from the config file
@@ -7,7 +7,7 @@ openai.api_key = config.OPENAI_API_KEY
 
 # Fetch top stocks from ChatGPT
 def fetch_top_stocks():
-    print_log("Fetching top recommended stocks from ChatGPT...", level="info")
+    common.print_log("Fetching top recommended stocks from ChatGPT...", level="info")
     prompt = """
     You are an expert stock broker and trading expert, highly skilled in recommending stocks for buying or selling based on historic data (not real time data).
     While you lack access to real-time data, you excel at analyzing general market trends to identify opportunities. 
@@ -24,7 +24,7 @@ def fetch_top_stocks():
         temperature=0.7,
     )
     stocks = response['choices'][0]['message']['content'].strip().split(", ")
-    print_log(f"ChatGPT recommended stocks: {stocks}", level="success")
+    common.print_log(f"ChatGPT recommended stocks: {stocks}", level="success")
     return stocks
 
 # ChatGPT interaction

@@ -1,5 +1,5 @@
 import requests, config
-from utils.common import print_log
+import utils.common as common
 
 
 # Use keys from the config file
@@ -9,7 +9,7 @@ ALPACA_BASE_URL = "https://api.alpaca.markets"
 
 # Fetch Alpaca portfolio and open orders
 def fetch_portfolio():
-    print_log("Fetching portfolio details and open orders...\n", level="info")
+    common.print_log("Fetching portfolio details and open orders...\n", level="info")
     headers = {
         "APCA-API-KEY-ID": ALPACA_API_KEY,
         "APCA-API-SECRET-KEY": ALPACA_SECRET_KEY,
@@ -24,39 +24,39 @@ def fetch_portfolio():
     portfolio_value = float(account_info.get("portfolio_value", 0))
     buying_power = float(account_info.get("buying_power", 0))
 
-    print_log(f"Portfolio Value: ${portfolio_value:.2f}", level="success")
-    print_log(f"Buying Power: ${buying_power:.2f}\n", level="success")
+    common.print_log(f"Portfolio Value: ${portfolio_value:.2f}", level="success")
+    common.print_log(f"Buying Power: ${buying_power:.2f}\n", level="success")
 
     # Extract detailed position information
     if positions:
-        print_log("\nPositions:\n", level="warning")
-        print_log(f"{'Symbol':<10}{'Quantity':<10}{'Current Price':<15}{'Market Value':<15}{'Profit/Loss ($)':<20}")
-        print_log("-" * 70, level="info")
+        common.print_log("\nPositions:\n", level="warning")
+        common.print_log(f"{'Symbol':<10}{'Quantity':<10}{'Current Price':<15}{'Market Value':<15}{'Profit/Loss ($)':<20}")
+        common.print_log("-" * 70, level="info")
         for pos in positions:
             symbol = pos["symbol"]
             qty = float(pos["qty"])
             current_price = float(pos["current_price"])
             market_value = float(pos["market_value"])
             unrealized_pl = float(pos["unrealized_pl"])
-            print_log(f"{symbol:<10}{qty:<10.2f}{current_price:<15.2f}{market_value:<15.2f}{unrealized_pl:<20.2f}")
-        print_log("-" * 70 + "\n", level="info")
+            common.print_log(f"{symbol:<10}{qty:<10.2f}{current_price:<15.2f}{market_value:<15.2f}{unrealized_pl:<20.2f}")
+        common.print_log("-" * 70 + "\n", level="info")
     else:
-        print_log("No positions found in the portfolio.", level="warning")
+        common.print_log("No positions found in the portfolio.", level="warning")
 
     # Extract and display open orders
     if open_orders:
-        print_log("\nOpen Orders:\n", level="warning")
-        print_log(f"{'Symbol':<10}{'Side':<10}{'Qty':<10}{'Status':<15}")
-        print_log("-" * 40, level="info")
+        common.print_log("\nOpen Orders:\n", level="warning")
+        common.print_log(f"{'Symbol':<10}{'Side':<10}{'Qty':<10}{'Status':<15}")
+        common.print_log("-" * 40, level="info")
         for order in open_orders:
             symbol = order["symbol"]
             side = order["side"]
             qty = float(order["qty"])
             status = order["status"]
-            print_log(f"{symbol:<10}{side:<10}{qty:<10.2f}{status:<15}")
-        print_log("-" * 40 + "\n", level="info")
+            common.print_log(f"{symbol:<10}{side:<10}{qty:<10.2f}{status:<15}")
+        common.print_log("-" * 40 + "\n", level="info")
     else:
-        print_log("No open orders found.\n", level="warning")
+        common.print_log("No open orders found.\n", level="warning")
 
     # Return the portfolio data with open orders and updated values
     portfolio = {
@@ -78,7 +78,7 @@ def fetch_portfolio():
 
 # Fetch stock data for the portfolio and recommended stocks
 def fetch_stock_data(stocks):
-    print_log("Fetching stock data...", level="info")
+    common.print_log("Fetching stock data...", level="info")
     headers = {
         "APCA-API-KEY-ID": ALPACA_API_KEY,
         "APCA-API-SECRET-KEY": ALPACA_SECRET_KEY,
@@ -89,7 +89,7 @@ def fetch_stock_data(stocks):
     # Fetch data for each stock
     for stock in stocks:
         url = f"{ALPACA_BASE_URL}/v2/stocks/{stock}/bars?timeframe=1Min&limit=10"
-        print_log(f"Requesting URL: {url}", level="info")  # Debugging the API URL
+        common.print_log(f"Requesting URL: {url}", level="info")  # Debugging the API URL
         response = requests.get(url, headers=headers)
 
         if response.status_code == 200:
@@ -99,26 +99,26 @@ def fetch_stock_data(stocks):
                 if isinstance(bars, list) and bars:
                     data[stock] = [bar["c"] for bar in bars]  # Extract closing prices
                 else:
-                    print_log(f"No valid data for {stock}. Bars: {bars}", level="warning")
+                    common.print_log(f"No valid data for {stock}. Bars: {bars}", level="warning")
                     failed_stocks.append(stock)
             except Exception as e:
-                print_log(f"Error processing data for {stock}: {e}", level="error")
+                common.print_log(f"Error processing data for {stock}: {e}", level="error")
                 failed_stocks.append(stock)
         elif response.status_code == 404:
-            print_log(f"Failed to fetch data for {stock}. Status: {response.status_code}. Response: Not Found.", level="warning")
+            common.print_log(f"Failed to fetch data for {stock}. Status: {response.status_code}. Response: Not Found.", level="warning")
             failed_stocks.append(stock)
         else:
-            print_log(f"Failed to fetch data for {stock}. Status: {response.status_code}. Response: {response.text}", level="warning")
+            common.print_log(f"Failed to fetch data for {stock}. Status: {response.status_code}. Response: {response.text}", level="warning")
             failed_stocks.append(stock)
 
     # Log successes and failures
-    print_log("Stock data fetching completed.", level="success")
+    common.print_log("Stock data fetching completed.", level="success")
     if failed_stocks:
-        print_log(f"Failed to fetch data for: {', '.join(failed_stocks)}", level="warning")
+        common.print_log(f"Failed to fetch data for: {', '.join(failed_stocks)}", level="warning")
 
     # Represent the stock data
     if data:
-        print_log("Stock data summary:", level="info")
+        common.print_log("Stock data summary:", level="info")
         for stock, prices in data.items():
             print(f"Stock: {stock}")
             print(f"  Closing Prices (last {len(prices)} minutes): {prices}")
@@ -130,7 +130,7 @@ def fetch_stock_data(stocks):
 
 # Execute trades based on decisions
 def execute_trades(decisions):
-    print_log("Executing trades instantly...", level="action")
+    common.print_log("Executing trades instantly...", level="action")
     headers = {
         "APCA-API-KEY-ID": ALPACA_API_KEY,
         "APCA-API-SECRET-KEY": ALPACA_SECRET_KEY,
@@ -144,7 +144,7 @@ def execute_trades(decisions):
             "type": "market",
             "time_in_force": "day",
         })
-        print_log(f"Bought {qty} of {stock}. Response: {response.status_code}", level="success")
+        common.print_log(f"Bought {qty} of {stock}. Response: {response.status_code}", level="success")
 
     # Execute sell orders immediately
     for stock, qty in decisions["sell"]:
@@ -155,4 +155,4 @@ def execute_trades(decisions):
             "type": "market",
             "time_in_force": "day",
         })
-        print_log(f"Sold {qty} of {stock}. Response: {response.status_code}", level="success")
+        common.print_log(f"Sold {qty} of {stock}. Response: {response.status_code}", level="success")
