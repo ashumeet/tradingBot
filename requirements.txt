@@ -1,0 +1,4 @@
+alpaca-py==0.34.0
+colorama
+pytz
+openai==0.28
