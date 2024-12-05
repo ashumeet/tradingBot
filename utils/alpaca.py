@@ -15,7 +15,7 @@ data_client = StockHistoricalDataClient(api_key=config.ALPACA_API_KEY, secret_ke
 
 # Fetch Alpaca portfolio and open orders
 def fetch_portfolio():
-    common.print_log("Fetching portfolio details and open orders...\n", level="info")
+    common.print_log("Fetching portfolio details and open orders ...\n", level="info")
 
     # Fetch account and positions
     account = trading_client.get_account()
@@ -81,7 +81,7 @@ def fetch_portfolio():
 
 # Fetch stock data for the portfolio and recommended stocks
 def fetch_stock_data(stocks):
-    common.print_log("Fetching stock data...", level="info")
+    common.print_log("Fetching stock data ...", level="info")
     data = {}
     failed_stocks = []
 
@@ -91,7 +91,8 @@ def fetch_stock_data(stocks):
             request_params = StockBarsRequest(
                 symbol_or_symbols=stock,
                 timeframe=TimeFrame.Minute,
-                start=datetime.now() - timedelta(minutes=10)  # Get data from the last 10 minutes
+                start=datetime.now() - timedelta(minutes=10),
+                limit=100
             )
             bars = data_client.get_stock_bars(request_params)
             if bars.df is not None and not bars.df.empty:
@@ -123,26 +124,36 @@ def fetch_stock_data(stocks):
 
 # Execute trades based on decisions
 def execute_trades(decisions):
-    common.print_log("Executing trades instantly...", level="action")
-
-    # Execute buy orders immediately
-    for stock, qty in decisions["buy"]:
-        market_order_data = MarketOrderRequest(
-            symbol=stock,
-            qty=qty,
-            side=OrderSide.BUY,
-            time_in_force=TimeInForce.DAY
-        )
-        trading_client.submit_order(order_data=market_order_data)
-        common.print_log(f"Bought {qty} of {stock}.", level="success")
+    common.print_log("\nExecuting trades ...", level="action")
 
     # Execute sell orders immediately
     for stock, qty in decisions["sell"]:
-        market_order_data = MarketOrderRequest(
-            symbol=stock,
-            qty=qty,
-            side=OrderSide.SELL,
-            time_in_force=TimeInForce.DAY
-        )
-        trading_client.submit_order(order_data=market_order_data)
-        common.print_log(f"Sold {qty} of {stock}.", level="success")
+        if qty == 0:
+            continue
+        try:
+            market_order_data = MarketOrderRequest(
+                symbol=stock,
+                qty=qty,
+                side=OrderSide.SELL,
+                time_in_force=TimeInForce.DAY
+            )
+            trading_client.submit_order(order_data=market_order_data)
+            common.print_log(f"Sold {qty} of {stock}.", level="success")
+        except Exception as e:
+            common.print_log(f"Failed to sell {qty} of {stock}. Error: {e}", level="error")
+
+    # Execute buy orders immediately
+    for stock, qty in decisions["buy"]:
+        if qty == 0:
+            continue
+        try:
+            market_order_data = MarketOrderRequest(
+                symbol=stock,
+                qty=qty,
+                side=OrderSide.BUY,
+                time_in_force=TimeInForce.DAY
+            )
+            trading_client.submit_order(order_data=market_order_data)
+            common.print_log(f"Bought {qty} of {stock}.", level="success")
+        except Exception as e:
+            common.print_log(f"Failed to buy {qty} of {stock}. Error: {e}", level="error")

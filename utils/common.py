@@ -41,36 +41,54 @@ def print_log(message, level="info"):
 
 # Print decisions
 def print_decisions(decisions):
+    """
+    Prints the buy and sell decisions along with reasoning for significant events.
+    """
+    if decisions["buy"]:
+        print_log("\nBuy Decisions:", level="info")
+        for stock, qty in decisions["buy"]:
+            if qty > 0:
+                print_log(f"BUY {stock} ({qty})", level="success")
+    else:
+        print_log("\nNothing To Buy", level="warrning")
 
-    print_log("\nBuy Decisions:", level="info")
-    for stock, qty in decisions["buy"]:
-        print_log(f"BUY {stock}({qty})", level="success")
 
-    print_log("\nSell Decisions:", level="info")
-    for stock, qty in decisions["sell"]:
-        print_log(f"SELL {stock}({qty})", level="warning")
+    if decisions["sell"]:
+        print_log("\nSell Decisions:", level="info")
+        for stock, qty in decisions["sell"]:
+            if qty > 0:
+                print_log(f"SELL {stock} ({qty})", level="warning")
+    else:
+        print_log("\nNothing To Sell", level="warrning")
 
-    print_log("\nReasoning:", level="info")
-    for reason in decisions["reasoning"]:
-        print_log(reason, level="action")
+    if decisions["reasoning"]:
+        print_log("\nReasoning for Significant Events:", level="info")
+        for reason in decisions["reasoning"]:
+            print_log(reason, level="action")
+
 
 # Decode ChatGPT response
+# Decode ChatGPT response
 def decode_chat_gpt_response(response):
-
+    """
+    Decodes the structured ChatGPT response into buy/sell decisions and reasoning.
+    """
     decisions = {"buy": [], "sell": [], "reasoning": []}
     lines = response.splitlines()
     for line in lines:
+        line = line.strip()
         if line.startswith("BUY"):
             _, stock, qty, reason = line.split(":", 3)
-            decisions["buy"].append((stock.strip(), int(qty.strip())))
+            decisions["buy"].append((stock.strip(), float(qty.strip())))
             decisions["reasoning"].append(f"BUY {stock.strip()}: {reason.strip()}")
         elif line.startswith("SELL"):
             _, stock, qty, reason = line.split(":", 3)
-            decisions["sell"].append((stock.strip(), int(qty.strip())))
+            decisions["sell"].append((stock.strip(), float(qty.strip())))
             decisions["reasoning"].append(f"SELL {stock.strip()}: {reason.strip()}")
         elif line.startswith("HOLD"):
-            decisions["reasoning"].append(line.strip())
+            if "significant" in line.lower():
+                decisions["reasoning"].append(line.strip())
         else:
-            decisions["reasoning"].append(f"UNKNOWN: {line.strip()}") 
+            decisions["reasoning"].append(f"{line.strip()}")
 
     return decisions
