@@ -1,4 +1,4 @@
-# trading_bot
+# Trading Bot
 This is a bot that will trade on your behalf, every minute by minute
 
 ## Technologies Used:
