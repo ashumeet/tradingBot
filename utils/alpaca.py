@@ -21,16 +21,15 @@ def fetch_portfolio():
     open_orders = requests.get(f"{ALPACA_BASE_URL}/v2/orders", headers=headers).json()
 
     # Extract relevant account details
-    cash = float(account_info.get("cash", 0))
     portfolio_value = float(account_info.get("portfolio_value", 0))
+    buying_power = float(account_info.get("buying_power", 0))
 
     print_log(f"Portfolio Value: ${portfolio_value:.2f}", level="success")
-    print_log(f"Available Cash: ${cash:.2f}\n", level="success")
+    print_log(f"Buying Power: ${buying_power:.2f}\n", level="success")
 
     # Extract detailed position information
     if positions:
-        print_log("\nPositions:", level="info")
-        print_log("-" * 70, level="info")
+        print_log("\nPositions:\n", level="warning")
         print_log(f"{'Symbol':<10}{'Quantity':<10}{'Current Price':<15}{'Market Value':<15}{'Profit/Loss ($)':<20}")
         print_log("-" * 70, level="info")
         for pos in positions:
@@ -46,8 +45,7 @@ def fetch_portfolio():
 
     # Extract and display open orders
     if open_orders:
-        print_log("\nOpen Orders:", level="info")
-        print_log("-" * 25, level="info")
+        print_log("\nOpen Orders:\n", level="warning")
         print_log(f"{'Symbol':<10}{'Side':<10}{'Qty':<10}{'Status':<15}")
         print_log("-" * 40, level="info")
         for order in open_orders:
@@ -58,11 +56,11 @@ def fetch_portfolio():
             print_log(f"{symbol:<10}{side:<10}{qty:<10.2f}{status:<15}")
         print_log("-" * 40 + "\n", level="info")
     else:
-        print_log("No open orders found.", level="warning")
+        print_log("No open orders found.\n", level="warning")
 
-    # Return the portfolio data with open orders
+    # Return the portfolio data with open orders and updated values
     portfolio = {
-        "cash": cash,
+        "buying_power": buying_power,
         "positions": {pos["symbol"]: float(pos["qty"]) for pos in positions},
         "open_orders": [
             {
@@ -70,9 +68,11 @@ def fetch_portfolio():
                 "side": order["side"],
                 "qty": float(order["qty"]),
                 "status": order["status"],
+                "current_price": float(requests.get(f"{ALPACA_BASE_URL}/v2/assets/{order['symbol']}/quote", headers=headers).json().get("last", 0)),  # Latest price
+                "total_value": float(order["qty"]) * float(requests.get(f"{ALPACA_BASE_URL}/v2/assets/{order['symbol']}/quote", headers=headers).json().get("last", 0)),  # Price * Qty
             }
             for order in open_orders
-        ],
+        ]
     }
     return portfolio
 

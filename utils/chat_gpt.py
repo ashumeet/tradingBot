@@ -35,9 +35,9 @@ def chatgpt_analysis(portfolio, stock_data):
     Analyze the following portfolio and stock data, and provide buy/sell/hold recommendations:
     
     Portfolio:
-    - Cash available: ${portfolio["cash"]:.2f}
+    - Buying Power: ${portfolio["buying_power"]:.2f}
     - Positions: {portfolio["positions"]}
-    - Open orders: {portfolio["open_orders"]}
+    - Open Orders: {portfolio["open_orders"]}
     
     Stock Data (symbol: prices):
     {stock_data}

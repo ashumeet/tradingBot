@@ -38,3 +38,18 @@ def print_log(message, level="info"):
     }
     color = colors.get(level, Fore.WHITE)
     print(f"{color}{message}{Style.RESET_ALL}")
+
+# Print decisions
+def print_decisions(decisions):
+
+    print_log("\nBuy Decisions:", level="info")
+    for stock, qty in decisions["buy"]:
+        print_log(f"BUY {stock}({qty})", level="success")
+
+    print_log("\nSell Decisions:", level="info")
+    for stock, qty in decisions["sell"]:
+        print_log(f"SELL {stock}({qty})", level="warning")
+
+    print_log("\nReasoning:", level="info")
+    for reason in decisions["reasoning"]:
+        print_log(reason, level="action")
