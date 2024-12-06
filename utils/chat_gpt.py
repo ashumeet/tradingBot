@@ -7,9 +7,16 @@ openai.api_key = config.OPENAI_API_KEY
 
 def fetch_top_volatile_stocks():
     """
-    Fetch volatile stocks from ChatGPT recommendations.
+    Fetches the top 10 most volatile stocks from ChatGPT recommendations.
+
+    ChatGPT is prompted to provide a comma-separated list of stock tickers
+    based on historical market trends, focusing on significant intraday price fluctuations.
+
+    Returns:
+        list: A list of recommended volatile stock tickers.
     """
-    common.print_log("Fetching volatile stocks from ChatGPT ...", level="info")
+
+    common.print_log("Fetching volatile stocks from ChatGPT ...", common.LogLevel.ACTION)
     
     # ChatGPT prompt for volatile stocks
     prompt = """
@@ -33,7 +40,7 @@ def fetch_top_volatile_stocks():
         temperature=0.7,
     )
     stocks = response['choices'][0]['message']['content'].strip().split(", ")
-    common.print_log(f"ChatGPT recommended volatile stocks: {stocks}", level="success")
+    common.print_log(f"ChatGPT recommended volatile stocks: {stocks}", common.LogLevel.SUCCESS)
     return stocks
 
 def chatgpt_analysis(portfolio, stock_data):
@@ -49,6 +56,9 @@ def chatgpt_analysis(portfolio, stock_data):
     - A structured string response from ChatGPT, including BUY/SELL/HOLD actions 
       for high-frequency trading.
     """
+
+    common.print_log("Doing ChatGPT analysis ...", common.LogLevel.ACTION)
+
     prompt = f"""
     Analyze the following portfolio and stock data, and provide trading recommendations based on:
     - Minute-by-minute trading strategies to capture short-term market trends.

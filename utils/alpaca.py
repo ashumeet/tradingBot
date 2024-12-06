@@ -9,61 +9,40 @@ from datetime import datetime, timedelta
 import config
 import utils.common as common
 
-# Initialize the Alpaca Trading and Data API clients
+
 trading_client = TradingClient(config.ALPACA_API_KEY, config.ALPACA_SECRET_KEY, paper=False)
 data_client = StockHistoricalDataClient(api_key=config.ALPACA_API_KEY, secret_key=config.ALPACA_SECRET_KEY)
 
-# Fetch Alpaca portfolio and open orders
-def fetch_portfolio():
-    common.print_log("Fetching portfolio details and open orders ...\n", level="info")
 
-    # Fetch account and positions
+def fetch_portfolio():
+    """
+    Fetches Alpaca portfolio and open orders, and prints their details.
+    Returns:
+        dict: A dictionary containing buying power, positions, and open orders.
+    """
+
+    common.print_log("Fetching portfolio details and open orders ...\n", common.LogLevel.ACTION)
     account = trading_client.get_account()
     positions = trading_client.get_all_positions()
-
-    # Fetch open orders using the correct request model
     order_request = GetOrdersRequest(status="open")
     orders = trading_client.get_orders(filter=order_request)
 
-    # Extract relevant account details
     portfolio_value = float(account.portfolio_value)
     buying_power = float(account.buying_power)
 
-    common.print_log(f"Portfolio Value: ${portfolio_value:.2f}", level="success")
-    common.print_log(f"Buying Power: ${buying_power:.2f}\n", level="success")
+    common.print_log(f"Portfolio Value: ${portfolio_value:.2f}", common.LogLevel.SUCCESS)
+    common.print_log(f"Buying Power: ${buying_power:.2f}\n", common.LogLevel.SUCCESS)
 
-    # Extract detailed position information
     if positions:
-        common.print_log("\nPositions:\n", level="warning")
-        common.print_log(f"{'Symbol':<10}{'Quantity':<10}{'Current Price':<15}{'Market Value':<15}{'Profit/Loss ($)':<20}")
-        common.print_log("-" * 70, level="info")
-        for pos in positions:
-            symbol = pos.symbol
-            qty = float(pos.qty)
-            current_price = float(pos.current_price)
-            market_value = float(pos.market_value)
-            unrealized_pl = float(pos.unrealized_pl)
-            common.print_log(f"{symbol:<10}{qty:<10.2f}{current_price:<15.2f}{market_value:<15.2f}{unrealized_pl:<20.2f}")
-        common.print_log("-" * 70 + "\n", level="info")
+        common.print_positions(positions)
     else:
-        common.print_log("No positions found in the portfolio.", level="warning")
+        common.print_log("No positions found in the portfolio.", common.LogLevel.WARNING)
 
-    # Extract and display open orders
     if orders:
-        common.print_log("\nOpen Orders:\n", level="warning")
-        common.print_log(f"{'Symbol':<10}{'Side':<10}{'Qty':<10}{'Status':<15}")
-        common.print_log("-" * 40, level="info")
-        for order in orders:
-            symbol = order.symbol
-            side = order.side
-            qty = float(order.qty)
-            status = order.status
-            common.print_log(f"{symbol:<10}{side:<10}{qty:<10.2f}{status:<15}")
-        common.print_log("-" * 40 + "\n", level="info")
+        common.print_open_orders(orders)
     else:
-        common.print_log("No open orders found.\n", level="warning")
+        common.print_log("No open orders found.\n", common.LogLevel.WARNING)
 
-    # Return the portfolio data with open orders and updated values
     portfolio = {
         "buying_power": buying_power,
         "positions": {pos.symbol: float(pos.qty) for pos in positions},
@@ -79,13 +58,22 @@ def fetch_portfolio():
     }
     return portfolio
 
-# Fetch stock data for the portfolio and recommended stocks
+
 def fetch_stock_data(stocks):
-    common.print_log("Fetching stock data ...", level="info")
+    """
+    Fetches historical stock data for the given list of stocks.
+
+    Args:
+        stocks (list): A list of stock symbols to fetch data for.
+
+    Returns:
+        data: A dictionary mapping stock symbols to their closing prices.
+    """
+
+    common.print_log("Fetching stock data ...", common.LogLevel.ACTION)
     data = {}
     failed_stocks = []
 
-    # Fetch data for each stock
     for stock in stocks:
         try:
             request_params = StockBarsRequest(
@@ -99,20 +87,18 @@ def fetch_stock_data(stocks):
                 closing_prices = bars.df["close"].tolist()
                 data[stock] = closing_prices
             else:
-                common.print_log(f"No valid data for {stock}.", level="warning")
+                common.print_log(f"No valid data for {stock}.", common.LogLevel.WARNING)
                 failed_stocks.append(stock)
         except Exception as e:
-            common.print_log(f"Error fetching data for {stock}: {e}", level="error")
+            common.print_log(f"Error fetching data for {stock}: {e}", common.LogLevel.ERROR)
             failed_stocks.append(stock)
 
-    # Log successes and failures
-    common.print_log("Stock data fetching completed.", level="success")
+    common.print_log("Stock data fetching completed.", common.LogLevel.SUCCESS)
     if failed_stocks:
-        common.print_log(f"Failed to fetch data for: {', '.join(failed_stocks)}", level="warning")
+        common.print_log(f"Failed to fetch data for: {', '.join(failed_stocks)}", common.LogLevel.WARNING)
 
-    # Represent the stock data
     if data:
-        common.print_log("Stock data summary:", level="info")
+        common.print_log("Stock data summary:", common.LogLevel.SUCCESS)
         for stock, prices in data.items():
             print(f"Stock: {stock}")
             print(f"  Closing Prices (last {len(prices)} minutes): {prices}")
@@ -122,11 +108,18 @@ def fetch_stock_data(stocks):
 
     return data
 
-# Execute trades based on decisions
 def execute_trades(decisions):
-    common.print_log("\nExecuting trades ...", level="action")
+    """
+    Executes buy and sell orders based on the provided decisions.
 
-    # Execute sell orders immediately
+    Args:
+        decisions (dict): A dictionary with "buy" and "sell" keys, each containing a list of tuples.
+                          Each tuple includes a stock symbol (str) and a quantity (int).
+
+    """
+
+    common.print_log("\nExecuting trades ...", common.LogLevel.ACTION)
+
     for stock, qty in decisions["sell"]:
         if qty == 0:
             continue
@@ -138,11 +131,10 @@ def execute_trades(decisions):
                 time_in_force=TimeInForce.DAY
             )
             trading_client.submit_order(order_data=market_order_data)
-            common.print_log(f"Sold {qty} of {stock}.", level="success")
+            common.print_log(f"Sold {qty} of {stock}.", common.LogLevel.SUCCESS)
         except Exception as e:
-            common.print_log(f"Failed to sell {qty} of {stock}. Error: {e}", level="error")
+            common.print_log(f"Failed to sell {qty} of {stock}. Error: {e}", common.LogLevel.ERROR)
 
-    # Execute buy orders immediately
     for stock, qty in decisions["buy"]:
         if qty == 0:
             continue
@@ -154,6 +146,6 @@ def execute_trades(decisions):
                 time_in_force=TimeInForce.DAY
             )
             trading_client.submit_order(order_data=market_order_data)
-            common.print_log(f"Bought {qty} of {stock}.", level="success")
+            common.print_log(f"Bought {qty} of {stock}.", common.LogLevel.SUCCESS)
         except Exception as e:
-            common.print_log(f"Failed to buy {qty} of {stock}. Error: {e}", level="error")
+            common.print_log(f"Failed to buy {qty} of {stock}. Error: {e}", common.LogLevel.ERROR)
