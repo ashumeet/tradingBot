@@ -23,7 +23,7 @@ from colorama import Fore, Style, init
 init(autoreset=True)
 
 # Import using absolute imports
-from src.tradingbot.config import config
+from src.markettrader.config import config
 
 
 # Define some additional color formatting for better visual separation

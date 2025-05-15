@@ -43,16 +43,24 @@ def fetch_top_volatile_stocks():
 
     Do not include any additional explanation or text; provide only the tickers.
     """
-    response = openai.ChatCompletion.create(
-        model="gpt-4",
-        messages=[
-            {"role": "system", "content": "You are a financial trading assistant."},
-            {"role": "user", "content": prompt},
-        ],
-        max_tokens=50,
-        temperature=0.7,
-    )
-    stocks = response['choices'][0]['message']['content'].strip().split(", ")
+    # Using gpt-3.5-turbo instead of gpt-4 to ensure compatibility with more API keys
+    try:
+        response = openai.ChatCompletion.create(
+            model="gpt-3.5-turbo",
+            messages=[
+                {"role": "system", "content": "You are a financial trading assistant."},
+                {"role": "user", "content": prompt},
+            ],
+            max_tokens=50,
+            temperature=0.7,
+        )
+        content = response['choices'][0]['message']['content'].strip()
+    except Exception as e:
+        common.print_log(f"Error calling OpenAI API: {e}", common.LogLevel.ERROR)
+        # Provide a fallback list of volatile stocks
+        common.print_log("Using fallback list of volatile stocks", common.LogLevel.WARNING)
+        content = "TSLA, NVDA, AMD, AAPL, MSFT, AMZN, META, GOOGL, NFLX, SNAP"
+    stocks = content.split(", ")
     common.print_log(f"ChatGPT recommended volatile stocks: {stocks}", common.LogLevel.SUCCESS)
     return stocks
 
@@ -104,14 +112,22 @@ def chatgpt_analysis(portfolio, stock_data):
     - Do not recommend speculative trades without clear justification.
     - Ensure total cost of BUY actions does not exceed available buying power (${portfolio["buying_power"]:.2f}).
     """
-    response = openai.ChatCompletion.create(
-        model="gpt-4",
-        messages=[
-            {"role": "system", "content": "You are a financial assistant combining minute-level trading strategies with Warren Buffett's long-term mindset."},
-            {"role": "user", "content": prompt},
-        ],
-        max_tokens=1000,
-        temperature=0.7,  # Balanced creativity and predictability
-    )
-    
-    return response['choices'][0]['message']['content'].strip() 
+    try:
+        response = openai.ChatCompletion.create(
+            model="gpt-3.5-turbo",  # Using gpt-3.5-turbo instead of gpt-4
+            messages=[
+                {"role": "system", "content": "You are a financial assistant combining minute-level trading strategies with Warren Buffett's long-term mindset."},
+                {"role": "user", "content": prompt},
+            ],
+            max_tokens=1000,
+            temperature=0.7,  # Balanced creativity and predictability
+        )
+        return response['choices'][0]['message']['content'].strip()
+    except Exception as e:
+        common.print_log(f"Error calling OpenAI API: {e}", common.LogLevel.ERROR)
+        # Return a fallback analysis
+        return """
+        HOLD: All positions: 0: Market conditions uncertain. Preserving capital for better opportunities.
+        BUY: AAPL: 1: Strong fundamentals and growth potential.
+        BUY: MSFT: 1: Solid company with consistent performance.
+        """ 

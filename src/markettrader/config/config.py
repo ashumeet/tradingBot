@@ -77,6 +77,13 @@ ALPACA_API_KEY = os.getenv("ALPACA_API_KEY", "")
 ALPACA_SECRET_KEY = os.getenv("ALPACA_SECRET_KEY", "")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
 
+# Redis configuration
+REDIS_HOST = os.getenv("REDIS_HOST", "localhost")
+REDIS_PORT = int(os.getenv("REDIS_PORT", "6379"))
+REDIS_PASSWORD = os.getenv("REDIS_PASSWORD", "")
+REDIS_DB = int(os.getenv("REDIS_DB", "0"))
+REDIS_USE_SSL = os.getenv("REDIS_USE_SSL", "false").lower() == "true"
+
 # Environment configuration
 ENVIRONMENT = os.getenv("ENVIRONMENT", "paper").lower()  # Default to paper trading
 
@@ -147,6 +154,10 @@ def validate_config():
         "ALPACA_API_URL": ALPACA_API_URL,
         "ALPACA_DATA_API_URL": ALPACA_DATA_API_URL
     }
+    
+    # Redis is not critical for basic operation, but log warning if missing
+    if not REDIS_HOST or not REDIS_PORT:
+        print("Warning: Redis configuration is incomplete. Redis features will not be available.")
     
     # Check for missing variables
     missing_vars = [var_name for var_name, var_value in required_vars.items() if not var_value]

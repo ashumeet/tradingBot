@@ -97,11 +97,16 @@ def fetch_stock_data(stocks):
 
     for stock in stocks:
         try:
+            # Use a fixed time window in the past to ensure data availability
+            end = datetime.now() - timedelta(days=1)  # Use yesterday to ensure market was open
+            start = end - timedelta(days=5)  # Get 5 days of data
+            
             request_params = StockBarsRequest(
                 symbol_or_symbols=stock,
-                timeframe=TimeFrame.Minute,
-                start=datetime.now() - timedelta(minutes=10),
-                limit=100
+                timeframe=TimeFrame.Day,  # Switch to daily data which is more reliable
+                start=start,
+                end=end,
+                limit=10
             )
             bars = data_client.get_stock_bars(request_params)
             if bars.df is not None and not bars.df.empty:

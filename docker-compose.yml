@@ -1,0 +1,50 @@
+version: '3.8'
+
+services:
+  # Trading Bot Service
+  trading-bot:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: trading-bot
+    restart: unless-stopped
+    volumes:
+      - .:/app
+      - ./data:/app/data
+    environment:
+      - ENV_FILE=/app/.env
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-}
+      - REDIS_DB=0
+    depends_on:
+      - redis
+    networks:
+      - trading-network
+
+  # Redis Service
+  redis:
+    image: redis:7-alpine
+    container_name: trading-redis
+    restart: unless-stopped
+    command: >
+      --requirepass ${REDIS_PASSWORD:-}
+    ports:
+      - "6380:6379"  # Map to a different port to avoid conflicts with local Redis
+    volumes:
+      - redis-data:/data
+    networks:
+      - trading-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 3
+
+volumes:
+  redis-data:
+    driver: local
+
+networks:
+  trading-network:
+    driver: bridge 
