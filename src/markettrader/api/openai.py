@@ -1,9 +1,18 @@
-import openai, config
-import utils.common as common
+"""
+OpenAI API integration for trading analysis.
+
+This module provides functions to interact with OpenAI's API for trading-related
+analysis, including fetching volatile stocks and analyzing portfolio data.
+"""
+
+import openai
+from ..config import OPENAI_API_KEY, mask_api_key
+from ..utils import common
 
 
-# Use keys from the config file
-openai.api_key = config.OPENAI_API_KEY
+# Configure OpenAI API with key from config
+openai.api_key = OPENAI_API_KEY
+
 
 def fetch_top_volatile_stocks():
     """
@@ -17,6 +26,10 @@ def fetch_top_volatile_stocks():
     """
 
     common.print_log("Fetching volatile stocks from ChatGPT ...", common.LogLevel.ACTION)
+    
+    # Log masked API key for debugging if needed
+    if common.is_debug_mode():
+        common.print_log(f"Using OpenAI API key: {mask_api_key(OPENAI_API_KEY)}", common.LogLevel.DEBUG)
     
     # ChatGPT prompt for volatile stocks
     prompt = """
@@ -43,6 +56,7 @@ def fetch_top_volatile_stocks():
     common.print_log(f"ChatGPT recommended volatile stocks: {stocks}", common.LogLevel.SUCCESS)
     return stocks
 
+
 def chatgpt_analysis(portfolio, stock_data):
     """
     Sends portfolio and stock data to ChatGPT and requests structured recommendations 
@@ -62,7 +76,7 @@ def chatgpt_analysis(portfolio, stock_data):
     prompt = f"""
     Analyze the following portfolio and stock data, and provide trading recommendations based on:
     - Minute-by-minute trading strategies to capture short-term market trends.
-    - Warren Buffett’s principles of value investing and cash preservation.
+    - Warren Buffett's principles of value investing and cash preservation.
 
     Portfolio:
     - Buying Power: ${portfolio["buying_power"]:.2f}
@@ -75,7 +89,7 @@ def chatgpt_analysis(portfolio, stock_data):
     Guidelines:
     - Combine short-term trading strategies with a long-term, value-driven mindset:
       - Use minute-level trends to decide on aggressive BUY/SELL actions for immediate returns.
-      - Apply Warren Buffett’s principle: Sell underperforming or overvalued stocks and hold cash if no better opportunities exist.
+      - Apply Warren Buffett's principle: Sell underperforming or overvalued stocks and hold cash if no better opportunities exist.
     - Do not recommend selling more shares of a stock than currently held in the portfolio. For example:
       - If you own 0 shares of TSLA, do not recommend SELL actions for TSLA.
     - Prioritize high-quality stocks with strong fundamentals over speculative trades.
@@ -100,4 +114,4 @@ def chatgpt_analysis(portfolio, stock_data):
         temperature=0.7,  # Balanced creativity and predictability
     )
     
-    return response['choices'][0]['message']['content'].strip()
+    return response['choices'][0]['message']['content'].strip() 

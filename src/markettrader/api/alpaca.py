@@ -1,3 +1,10 @@
+"""
+Alpaca API integration module.
+
+This module provides functions for interacting with the Alpaca trading platform,
+including fetching portfolio data, stock data, and executing trades.
+"""
+
 from alpaca.trading.client import TradingClient
 from alpaca.trading.requests import MarketOrderRequest
 from alpaca.trading.enums import OrderSide, TimeInForce
@@ -6,12 +13,26 @@ from alpaca.data.requests import StockBarsRequest
 from alpaca.trading.requests import GetOrdersRequest
 from alpaca.data.timeframe import TimeFrame
 from datetime import datetime, timedelta
-import config
-import utils.common as common
+
+from ..config import (
+    ALPACA_API_KEY, 
+    ALPACA_SECRET_KEY, 
+    ENVIRONMENT,
+    ALPACA_API_URL,
+    mask_api_key
+)
+from ..utils import common
 
 
-trading_client = TradingClient(config.ALPACA_API_KEY, config.ALPACA_SECRET_KEY, paper=False)
-data_client = StockHistoricalDataClient(api_key=config.ALPACA_API_KEY, secret_key=config.ALPACA_SECRET_KEY)
+# Log masked API key for debugging if needed
+if common.is_debug_mode():
+    common.print_log(f"Using Alpaca API key: {mask_api_key(ALPACA_API_KEY)}", common.LogLevel.DEBUG)
+    common.print_log(f"Environment: {ENVIRONMENT}", common.LogLevel.DEBUG)
+    common.print_log(f"Using Alpaca endpoint: {ALPACA_API_URL}", common.LogLevel.DEBUG)
+
+# Initialize Alpaca clients - paper=True for paper trading, paper=False for live trading
+trading_client = TradingClient(ALPACA_API_KEY, ALPACA_SECRET_KEY, paper=(ENVIRONMENT == 'paper'))
+data_client = StockHistoricalDataClient(api_key=ALPACA_API_KEY, secret_key=ALPACA_SECRET_KEY)
 
 
 def fetch_portfolio():
@@ -108,6 +129,7 @@ def fetch_stock_data(stocks):
 
     return data
 
+
 def execute_trades(decisions):
     """
     Executes buy and sell orders based on the provided decisions.
@@ -148,4 +170,4 @@ def execute_trades(decisions):
             trading_client.submit_order(order_data=market_order_data)
             common.print_log(f"Bought {qty} of {stock}.", common.LogLevel.SUCCESS)
         except Exception as e:
-            common.print_log(f"Failed to buy {qty} of {stock}. Error: {e}", common.LogLevel.ERROR)
+            common.print_log(f"Failed to buy {qty} of {stock}. Error: {e}", common.LogLevel.ERROR) 

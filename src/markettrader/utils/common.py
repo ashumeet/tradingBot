@@ -1,15 +1,35 @@
-import time, pytz
+"""
+Common utilities for the trading bot.
+
+This module provides utility functions that are used across the trading bot,
+including time-related functions, logging, and display formatting.
+"""
+
+import time, pytz, os
 from enum import Enum
 from colorama import Fore, Style
 from datetime import datetime, time, timedelta
 
 
 class LogLevel(Enum):
+    DEBUG = "debug"  # New debug level
     INFO = "info"
     SUCCESS = "success"
     WARNING = "warning"
     ERROR = "error"
     ACTION = "action"
+
+
+def is_debug_mode():
+    """
+    Determines if the application is running in debug mode.
+    
+    Debug mode can be enabled by setting the DEBUG environment variable to "true".
+    
+    Returns:
+        bool: True if debug mode is enabled, False otherwise.
+    """
+    return os.getenv("DEBUG", "false").lower() == "true"
 
 
 def is_market_open():
@@ -60,8 +80,12 @@ def print_log(message, level=LogLevel.INFO):
                           LogLevel.WARNING, LogLevel.ERROR, LogLevel.ACTION). Defaults to LogLevel.INFO.
 
     """
+    # Skip DEBUG messages unless debug mode is enabled
+    if level == LogLevel.DEBUG and not is_debug_mode():
+        return
 
     colors = {
+        LogLevel.DEBUG: Fore.BLUE,
         LogLevel.INFO: Fore.CYAN,
         LogLevel.SUCCESS: Fore.GREEN,
         LogLevel.WARNING: Fore.YELLOW,
@@ -69,7 +93,8 @@ def print_log(message, level=LogLevel.INFO):
         LogLevel.ACTION: Fore.MAGENTA,
     }
     color = colors.get(level, Fore.WHITE)
-    print(f"{color}{message}{Style.RESET_ALL}")
+    timestamp = datetime.now().strftime('%H:%M:%S')
+    print(f"{color}[{timestamp}] [{level.value.upper()}] {message}{Style.RESET_ALL}")
 
 
 def print_positions(positions):
@@ -163,4 +188,4 @@ def decode_chat_gpt_response(response):
         else:
             decisions["reasoning"].append(f"{line.strip()}")
 
-    return decisions
+    return decisions 
