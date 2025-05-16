@@ -10,7 +10,7 @@ import json
 import warnings
 import os
 from pathlib import Path
-from .trading_bot import main as run_bot
+from .market_trader import main as run_bot
 from .config import validate_config, get_secure_config_summary, ENVIRONMENT, ENV_FILE_PATH
 
 # Suppress specific urllib3 warnings about OpenSSL
@@ -48,30 +48,51 @@ def parse_args():
 
 
 def format_config_summary(config):
-    """Format configuration summary in a readable way with colors."""
-    header = f"{BLUE}=== Market Trader Configuration ==={NC}"
-    footer = f"{BLUE}==================================={NC}"
-    
-    env_status = f"{GREEN}PAPER TRADING{NC}" if config['ENVIRONMENT'] == 'paper' else f"{RED}LIVE TRADING{NC}"
-    
-    # Get information about the environment file
-    env_file = config.get('ENV_FILE_PATH', 'None')
-    env_file_status = f"{GREEN}Found{NC}" if env_file else f"{YELLOW}Using defaults{NC}"
-    
-    formatted = [
-        header,
-        f"{CYAN}• Environment:{NC} {env_status}",
-        f"{CYAN}• Config File:{NC} {env_file} ({env_file_status})",
-        f"{CYAN}• Alpaca API Key:{NC} {YELLOW}{config['ALPACA_API_KEY']}{NC}",
-        f"{CYAN}• Alpaca Secret Key:{NC} {YELLOW}{config['ALPACA_SECRET_KEY']}{NC}",
-        f"{CYAN}• OpenAI API Key:{NC} {YELLOW}{config['OPENAI_API_KEY']}{NC}",
-        f"{CYAN}• Alpaca API URL:{NC} {GREEN}{config['ALPACA_API_URL']}{NC}",
-        f"{CYAN}• Alpaca Data API URL:{NC} {GREEN}{config['ALPACA_DATA_API_URL']}{NC}",
-        f"{CYAN}• Target Index Funds:{NC} {MAGENTA}{', '.join(config['TARGET_INDEX_FUNDS'])}{NC}",
-        footer
-    ]
-    
-    return "\n".join(formatted)
+    """Format configuration summary using tabulate for a nice table display."""
+    try:
+        from tabulate import tabulate
+        
+        # Prepare data for tabulate
+        headers = ["Setting", "Value"]
+        table_data = [
+            ["Environment", f"{GREEN}{config['ENVIRONMENT'].upper()}{NC}" if config['ENVIRONMENT'] == 'paper' else f"{RED}{config['ENVIRONMENT'].upper()}{NC}"],
+            ["Config File", f"{config.get('ENV_FILE_PATH', 'None')}"],
+            ["Alpaca API Key", f"{YELLOW}{config['ALPACA_API_KEY']}{NC}"],
+            ["Alpaca Secret Key", f"{YELLOW}{config['ALPACA_SECRET_KEY']}{NC}"],
+            ["OpenAI API Key", f"{YELLOW}{config['OPENAI_API_KEY']}{NC}"],
+            ["Alpaca API URL", f"{GREEN}{config['ALPACA_API_URL']}{NC}"],
+            ["Alpaca Data API URL", f"{GREEN}{config['ALPACA_DATA_API_URL']}{NC}"],
+            ["Target Index Funds", f"{MAGENTA}{', '.join(config['TARGET_INDEX_FUNDS'])}{NC}"]
+        ]
+        
+        # Use the tabulate library directly
+        table = tabulate(table_data, headers=headers, tablefmt="grid")
+        return f"{BLUE}=== Market Trader Configuration ==={NC}\n{table}\n{BLUE}==================================={NC}"
+    except ImportError:
+        # Fallback to the original format if tabulate is not available
+        header = f"{BLUE}=== Market Trader Configuration ==={NC}"
+        footer = f"{BLUE}==================================={NC}"
+        
+        env_status = f"{GREEN}PAPER TRADING{NC}" if config['ENVIRONMENT'] == 'paper' else f"{RED}LIVE TRADING{NC}"
+        
+        # Get information about the environment file
+        env_file = config.get('ENV_FILE_PATH', 'None')
+        env_file_status = f"{GREEN}Found{NC}" if env_file else f"{YELLOW}Using defaults{NC}"
+        
+        formatted = [
+            header,
+            f"{CYAN}• Environment:{NC} {env_status}",
+            f"{CYAN}• Config File:{NC} {env_file} ({env_file_status})",
+            f"{CYAN}• Alpaca API Key:{NC} {YELLOW}{config['ALPACA_API_KEY']}{NC}",
+            f"{CYAN}• Alpaca Secret Key:{NC} {YELLOW}{config['ALPACA_SECRET_KEY']}{NC}",
+            f"{CYAN}• OpenAI API Key:{NC} {YELLOW}{config['OPENAI_API_KEY']}{NC}",
+            f"{CYAN}• Alpaca API URL:{NC} {GREEN}{config['ALPACA_API_URL']}{NC}",
+            f"{CYAN}• Alpaca Data API URL:{NC} {GREEN}{config['ALPACA_DATA_API_URL']}{NC}",
+            f"{CYAN}• Target Index Funds:{NC} {MAGENTA}{', '.join(config['TARGET_INDEX_FUNDS'])}{NC}",
+            footer
+        ]
+        
+        return "\n".join(formatted)
 
 
 def main():

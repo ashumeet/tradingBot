@@ -97,21 +97,41 @@ TARGET_INDEX_FUNDS = os.getenv("TARGET_INDEX_FUNDS", "SPY,QQQ,DIA").split(",")
 # Store the loaded environment file path for reference
 ENV_FILE_PATH = loaded_env_file
 
-def mask_api_key(api_key):
+def get_config_value(key, default=None):
+    """
+    Get a configuration value from the environment variables.
+    
+    Args:
+        key (str): The configuration key to look up
+        default: The default value to return if the key is not found
+        
+    Returns:
+        The configuration value or the default if not found
+    """
+    return os.environ.get(key, default)
+
+def mask_api_key(api_key, visible_chars=4):
     """
     Masks an API key for secure display in logs.
-    Returns the first 4 and last 4 characters, with everything in between replaced by asterisks.
+    Returns the first few and last few characters, with everything in between replaced by asterisks.
     
     Args:
         api_key (str): The API key to mask
+        visible_chars (int): The number of characters to show at the beginning and end.
         
     Returns:
         str: The masked API key or "invalid-key" if too short
     """
-    if not api_key or len(api_key) < 8:
+    if not api_key or len(api_key) < 8:  # Consider API keys shorter than 8 chars as invalid
         return "invalid-key"
     
-    return f"{api_key[:4]}{'*' * (len(api_key) - 8)}{api_key[-4:]}"
+    if len(api_key) <= visible_chars * 2:
+        # If key is not long enough to mask properly but still valid length
+        masked_part = '*' * (len(api_key) - 2)
+        return f"{api_key[:1]}{masked_part}{api_key[-1:]}"
+    
+    masked_part = '*' * (len(api_key) - (visible_chars * 2))
+    return f"{api_key[:visible_chars]}{masked_part}{api_key[-visible_chars:]}"
 
 def validate_api_key_format(key, name):
     """

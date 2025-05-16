@@ -1,10 +1,11 @@
 """
-Main Trading Bot Module
+Main Market Trader Module
 
-This module serves as the entry point for the trading bot application.
+This module serves as the entry point for the market trading application.
 It manages the trading cycles, market monitoring, and overall execution flow.
 """
 
+import json
 import time
 from datetime import datetime
 from colorama import init
@@ -30,27 +31,26 @@ def trading_day():
 
     day_summary = {}
     common.print_log("Market is open ...", common.LogLevel.ACTION)
-    while common.is_market_open():
 
-        common.print_log("Running a trading cycle ...\n", common.LogLevel.ACTION)
-        portfolio = alpaca.fetch_portfolio()
-        recommended_stocks = openai.fetch_top_volatile_stocks()
-        all_stocks = recommended_stocks + list(portfolio["positions"].keys())
-        stock_data = alpaca.fetch_stock_data(all_stocks)
-        response = openai.chatgpt_analysis(portfolio, stock_data)
-        decisions = common.decode_chat_gpt_response(response)
-        common.print_decisions(decisions)
+    common.print_log("Running a trading cycle ...\n", common.LogLevel.ACTION)
+    portfolio = alpaca.fetch_portfolio()
+    recommended_stocks = openai.fetch_top_volatile_stocks()
+    all_stocks = recommended_stocks + list(portfolio["positions"].keys())
+    stock_data = alpaca.fetch_stock_data(all_stocks)
+    response = openai.chatgpt_analysis(portfolio, stock_data)
+    decisions = common.decode_chat_gpt_response(response)
+    common.print_decisions(decisions)
 
-        day_summary[datetime.now().strftime("%Y-%m-%d %H:%M:%S")] = {
-            "buy_decisions": decisions["buy"],
-            "sell_decisions": decisions["sell"],
-            "reasoning": decisions["reasoning"],
-        }
+    day_summary[datetime.now().strftime("%Y-%m-%d %H:%M:%S")] = {
+        "buy_decisions": decisions["buy"],
+        "sell_decisions": decisions["sell"],
+        "reasoning": decisions["reasoning"],
+    }
 
-        alpaca.execute_trades(decisions)
+    alpaca.execute_trades(decisions)
 
-        common.print_log("\nSleeping for 1 mins ...\n", common.LogLevel.ACTION)
-        time.sleep(60)
+    common.print_log("\nSleeping for 1 mins ...\n", common.LogLevel.ACTION)
+    time.sleep(60)
 
     return day_summary
 
@@ -68,7 +68,7 @@ def main():
         
         # Display secure configuration summary
         config_summary = get_secure_config_summary()
-        common.print_log(f"Current configuration: {config_summary}", common.LogLevel.INFO)
+        common.print_log(f"Current configuration: {json.dumps(config_summary, indent=2)}", common.LogLevel.INFO)
         
         # Check for hardcoded secrets
         suspicious_files = check_for_hardcoded_secrets()

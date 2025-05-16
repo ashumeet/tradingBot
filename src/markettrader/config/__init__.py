@@ -16,7 +16,8 @@ from .config import (
     get_secure_config_summary,
     mask_api_key,
     check_for_hardcoded_secrets,
-    ENV_FILE_PATH
+    ENV_FILE_PATH,
+    get_config_value
 )
 
 __all__ = [
@@ -31,5 +32,6 @@ __all__ = [
     'get_secure_config_summary',
     'mask_api_key',
     'check_for_hardcoded_secrets',
-    'ENV_FILE_PATH'
+    'ENV_FILE_PATH',
+    'get_config_value'
 ] 

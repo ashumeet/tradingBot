@@ -13,13 +13,15 @@ from alpaca.data.requests import StockBarsRequest
 from alpaca.trading.requests import GetOrdersRequest
 from alpaca.data.timeframe import TimeFrame
 from datetime import datetime, timedelta
+from colorama import Fore, Style
 
 from ..config import (
     ALPACA_API_KEY, 
     ALPACA_SECRET_KEY, 
     ENVIRONMENT,
     ALPACA_API_URL,
-    mask_api_key
+    mask_api_key,
+    get_config_value
 )
 from ..utils import common
 
@@ -95,23 +97,40 @@ def fetch_stock_data(stocks):
     data = {}
     failed_stocks = []
 
+    # Replace FB with META if present
+    if "FB" in stocks:
+        common.print_log("Replacing FB with META in stock list", common.LogLevel.INFO)
+        stocks = [s if s != "FB" else "META" for s in stocks]
+
     for stock in stocks:
         try:
-            # Use a fixed time window in the past to ensure data availability
-            end = datetime.now() - timedelta(days=1)  # Use yesterday to ensure market was open
-            start = end - timedelta(days=5)  # Get 5 days of data
+            # Use current time window for minute data
+            end = datetime.now()
+            # Get 15 minute bars for better technical analysis (more data points)
+            start = end - timedelta(minutes=60)
             
             request_params = StockBarsRequest(
                 symbol_or_symbols=stock,
-                timeframe=TimeFrame.Day,  # Switch to daily data which is more reliable
+                timeframe=TimeFrame.Minute,  # Use minute data for real-time trading
                 start=start,
                 end=end,
-                limit=10
+                limit=60  # Get up to 60 minute bars
             )
             bars = data_client.get_stock_bars(request_params)
-            if bars.df is not None and not bars.df.empty:
-                closing_prices = bars.df["close"].tolist()
-                data[stock] = closing_prices
+            if bars and hasattr(bars, 'df') and bars.df is not None and not bars.df.empty:
+                # Filter by symbol if multiple symbols returned
+                if 'symbol' in bars.df.index.names:
+                    symbol_data = bars.df.xs(stock)
+                    closing_prices = symbol_data["close"].tolist()
+                else:
+                    closing_prices = bars.df["close"].tolist()
+                
+                # Ensure we have at least 3 data points for technical analysis
+                if len(closing_prices) >= 3:
+                    data[stock] = closing_prices
+                else:
+                    common.print_log(f"Insufficient data for {stock}, only {len(closing_prices)} bars returned.", common.LogLevel.WARNING)
+                    failed_stocks.append(stock)
             else:
                 common.print_log(f"No valid data for {stock}.", common.LogLevel.WARNING)
                 failed_stocks.append(stock)
@@ -124,13 +143,77 @@ def fetch_stock_data(stocks):
         common.print_log(f"Failed to fetch data for: {', '.join(failed_stocks)}", common.LogLevel.WARNING)
 
     if data:
-        common.print_log("Stock data summary:", common.LogLevel.SUCCESS)
+        # Prepare data for table display
+        headers = ["Symbol", "Price", "Change", "Range", "Trend"]
+        table_data = []
+        
         for stock, prices in data.items():
-            print(f"Stock: {stock}")
-            print(f"  Closing Prices (last {len(prices)} minutes): {prices}")
-            print(f"  Latest Price: {prices[-1]}")
-            print(f"  Average Price: {sum(prices) / len(prices):.2f}")
-            print("-" * 40)
+            if len(prices) >= 2:
+                # Calculate price change
+                latest_price = prices[-1]
+                prev_price = prices[-2]
+                price_change_pct = ((latest_price / prev_price) - 1) * 100
+                
+                # Determine min/max for recent range
+                recent_prices = prices[-min(10, len(prices)):]
+                min_price = min(recent_prices)
+                max_price = max(recent_prices)
+                
+                # Determine trend direction and visual indicator
+                if len(prices) >= 3:
+                    if prices[-1] > prices[-2] > prices[-3]:
+                        trend = "▲ Strong Up"
+                    elif prices[-1] > prices[-2]:
+                        trend = "↗ Uptrend"
+                    elif prices[-1] < prices[-2] < prices[-3]:
+                        trend = "▼ Strong Down"
+                    elif prices[-1] < prices[-2]:
+                        trend = "↘ Downtrend"
+                    else:
+                        trend = "→ Neutral"
+                else:
+                    trend = "? Unknown"
+                
+                # Format the price with appropriate decimal places based on value
+                if latest_price < 10:
+                    price_str = f"${latest_price:.4f}"
+                elif latest_price < 100:
+                    price_str = f"${latest_price:.2f}"
+                else:
+                    price_str = f"${latest_price:.2f}"
+                
+                # Format the change percentage
+                if price_change_pct > 0:
+                    change_str = f"+{price_change_pct:.2f}%"
+                elif price_change_pct < 0:
+                    change_str = f"{price_change_pct:.2f}%"
+                else:
+                    change_str = f"0.00%"
+                
+                # Format the price range with K suffix for thousands to save space
+                if min_price >= 1000 or max_price >= 1000:
+                    if min_price >= 1000:
+                        min_price_str = f"${min_price/1000:.2f}K"
+                    else:
+                        min_price_str = f"${min_price:.2f}"
+                        
+                    if max_price >= 1000:
+                        max_price_str = f"${max_price/1000:.2f}K"
+                    else:
+                        max_price_str = f"${max_price:.2f}"
+                    
+                    range_str = f"{min_price_str} - {max_price_str}"
+                else:
+                    range_str = f"${min_price:.2f} - ${max_price:.2f}"
+                
+                # Add row to table data
+                table_data.append([stock, price_str, change_str, range_str, trend])
+            else:
+                # Add row for insufficient data
+                table_data.append([stock, "Insufficient", "N/A", "N/A", "N/A"])
+        
+        # Display the table using the simplified display_table function
+        common.display_table(headers, table_data, "Stock Market Summary")
 
     return data
 

@@ -19,35 +19,35 @@ A Python-based algorithmic trading platform that uses OpenAI's GPT for market an
 ```
 marketTrader/
 ├── src/
-│   └── markettrader/           # Main package
-│       ├── __init__.py       # Package initialization
-│       ├── __main__.py       # CLI entry point
-│       ├── trading_bot.py    # Main application logic
-│       ├── config/           # Configuration module
+│   └── markettrader/                          # Main package
+│       ├── __init__.py                        # Package initialization
+│       ├── __main__.py                        # CLI entry point
+│       ├── market_trader.py                   # Main application logic
+│       ├── config/                            # Configuration module
 │       │   ├── __init__.py
-│       │   └── config.py     # Configuration management
-│       ├── api/              # API integrations
+│       │   └── config.py                      # Configuration management
+│       ├── api/                               # API integrations
 │       │   ├── __init__.py
-│       │   ├── alpaca.py     # Alpaca API integration
-│       │   └── openai.py     # OpenAI API integration
-│       ├── utils/            # Utility functions
+│       │   ├── alpaca.py                      # Alpaca API integration
+│       │   └── openai.py                      # OpenAI API integration
+│       ├── utils/                             # Utility functions
 │       │   ├── __init__.py
-│       │   └── common.py     # Common utilities
-│       └── tests/            # Test modules
+│       │   └── common.py                      # Common utilities
+│       └── tests/                             # Test modules
 │           ├── __init__.py
-│           ├── run_tests.py  # Test runner script
-│           ├── unit/         # Unit tests
+│           ├── run_tests.py                   # Test runner script
+│           ├── unit/                          # Unit tests
 │           │   ├── __init__.py
 │           │   └── test_config.py
-│           └── integration/  # Integration tests
+│           └── integration/                   # Integration tests
 │               ├── __init__.py
 │               └── test_api_integration.py
-├── trade.py                  # Convenience script to run the platform
-├── install.sh                # Installation/uninstallation script
-├── .env                      # Environment variables (not committed)
-├── requirements.txt          # Dependencies
-├── setup.py                  # Package setup
-└── README.md                 # This file
+├── trade.py                                  # Convenience script to run the platform
+├── install.sh                                # Installation/uninstallation script
+├── .env                                      # Environment variables (not committed)
+├── requirements.txt                          # Dependencies
+├── setup.py                                  # Package setup
+└── README.md                                 # This file
 ```
 
 ## Setup and Configuration
@@ -165,7 +165,7 @@ export DEBUG=true
 
 ### Using as a Python Module
 ```python
-from src.markettrader.trading_bot import main as run_trader
+from src.markettrader.market_trader import main as run_trader
 
 # Run the platform
 run_trader()
