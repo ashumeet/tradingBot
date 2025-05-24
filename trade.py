@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/Users/ashu/Documents/Workspace/traderApp/.venv/bin/python
 """
 Simple script to start the trading platform from the root directory.
 This provides a more convenient way to run the trading platform compared to
@@ -18,11 +18,13 @@ warnings.filterwarnings('ignore')
 import sys
 import os
 
-# Add the current directory to the path so we can import src
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+# Add the 'src' directory to the path so we can import trader_app
+src_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "src")
+if src_path not in sys.path:
+    sys.path.insert(0, src_path)
 
 # Import the main function from the module
-from src.trader_app.__main__ import main
+from trader_app.__main__ import main
 
 if __name__ == "__main__":
     # Call the main function with the command line arguments
