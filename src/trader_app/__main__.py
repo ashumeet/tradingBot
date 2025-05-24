@@ -6,6 +6,8 @@ This file allows running the app via `python trade.py` or `python -m trader_app`
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from trader_app.api.orders import router as orders_router
+from trader_app.api.account import router as account_router
+from trader_app.api.market import router as market_router, register_market_exception_handlers
 from trader_app.services.exception_handlers import register_exception_handlers
 import uvicorn
 import threading
@@ -29,6 +31,9 @@ def shutdown(request: Request):
     return {"message": "Server shutting down..."}
 
 app.include_router(orders_router)
+app.include_router(account_router)
+app.include_router(market_router)
+register_market_exception_handlers(app)
 
 def main():
     uvicorn.run(app, host="localhost", port=5638)

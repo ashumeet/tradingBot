@@ -17,4 +17,18 @@ class InternalServerError(Exception):
         self.code = "internal_server_error"
         self.message = message
         self.details = details
+        super().__init__(message)
+
+class InvalidSymbolError(Exception):
+    def __init__(self, message="Invalid symbol", details=None):
+        self.code = "invalid_symbol"
+        self.message = message
+        self.details = details
+        super().__init__(message)
+
+class MarketDataValidationError(Exception):
+    def __init__(self, message="Market data validation error", details=None):
+        self.code = "market_data_validation_error"
+        self.message = message
+        self.details = details
         super().__init__(message) 

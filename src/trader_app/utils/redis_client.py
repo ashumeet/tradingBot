@@ -61,4 +61,52 @@ class RedisClient:
             raise
     def get_client(self):
         return self._client
+    def get(self, key: str) -> Optional[str]:
+        """
+        Get a value from Redis by key. Returns None if not found or on error.
+        """
+        retries = 0
+        while retries < self.max_retries:
+            try:
+                value = self._client.get(key)
+                if value is not None:
+                    return value.decode("utf-8")
+                return None
+            except (ConnectionError, TimeoutError, RedisError) as e:
+                logger.warning(f"Redis GET failed (attempt {retries+1}): {e}")
+                time.sleep(min(self._backoff_factor * (2 ** retries), self._max_backoff))
+                retries += 1
+        logger.error(f"Redis GET failed for key {key} after {self.max_retries} retries.")
+        return None
+    def set(self, key: str, value: str, ex: Optional[int] = None) -> bool:
+        """
+        Set a value in Redis by key, with optional expiry (ex, in seconds).
+        Returns True if successful, False otherwise.
+        """
+        retries = 0
+        while retries < self.max_retries:
+            try:
+                self._client.set(key, value, ex=ex)
+                return True
+            except (ConnectionError, TimeoutError, RedisError) as e:
+                logger.warning(f"Redis SET failed (attempt {retries+1}): {e}")
+                time.sleep(min(self._backoff_factor * (2 ** retries), self._max_backoff))
+                retries += 1
+        logger.error(f"Redis SET failed for key {key} after {self.max_retries} retries.")
+        return False
+    def delete(self, key: str) -> bool:
+        """
+        Delete a key from Redis. Returns True if deleted, False otherwise.
+        """
+        retries = 0
+        while retries < self.max_retries:
+            try:
+                result = self._client.delete(key)
+                return result == 1
+            except (ConnectionError, TimeoutError, RedisError) as e:
+                logger.warning(f"Redis DELETE failed (attempt {retries+1}): {e}")
+                time.sleep(min(self._backoff_factor * (2 ** retries), self._max_backoff))
+                retries += 1
+        logger.error(f"Redis DELETE failed for key {key} after {self.max_retries} retries.")
+        return False
     # Add more methods as needed for get/set/delete, with retry and error handling

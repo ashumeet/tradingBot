@@ -1,23 +1,22 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 from typing import Optional
 from decimal import Decimal
 
 class PositionResponse(BaseModel):
-    asset_id: str = Field(..., description="Unique identifier for the asset", example="asset123")
-    symbol: str = Field(..., description="Trading symbol", example="AAPL")
-    avg_entry_price: Decimal = Field(..., description="Average entry price", example="150.00")
-    qty: Decimal = Field(..., description="Position quantity", example="10")
-    side: str = Field(..., description="Position side (long/short)", example="long")
-    market_value: Decimal = Field(..., description="Current market value", example="1500.00")
-    cost_basis: Decimal = Field(..., description="Original cost basis", example="1400.00")
-    unrealized_pl: Decimal = Field(..., description="Unrealized profit/loss", example="100.00")
-    unrealized_plpc: Decimal = Field(..., description="Unrealized profit/loss percentage", example="0.0714")
-    current_price: Decimal = Field(..., description="Current market price", example="150.00")
+    asset_id: str = Field(..., description="Unique identifier for the asset")
+    symbol: str = Field(..., description="Trading symbol")
+    avg_entry_price: Decimal = Field(..., description="Average entry price")
+    qty: Decimal = Field(..., description="Position quantity")
+    side: str = Field(..., description="Position side (long/short)")
+    market_value: Decimal = Field(..., description="Current market value")
+    cost_basis: Decimal = Field(..., description="Original cost basis")
+    unrealized_pl: Decimal = Field(..., description="Unrealized profit/loss")
+    unrealized_plpc: Decimal = Field(..., description="Unrealized profit/loss percentage")
+    current_price: Decimal = Field(..., description="Current market price")
     # Add more fields as needed, e.g., optional fields from Alpaca's API
 
-    class Config:
-        json_encoders = {Decimal: lambda v: str(v)}
-        schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "asset_id": "asset123",
                 "symbol": "AAPL",
@@ -30,4 +29,6 @@ class PositionResponse(BaseModel):
                 "unrealized_plpc": "0.0714",
                 "current_price": "150.00"
             }
-        }
+        },
+        json_encoders={Decimal: lambda v: str(v)}
+    )

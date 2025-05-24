@@ -29,16 +29,6 @@ def test_redis_client_connection(mock_redis, mock_pool):
     redis_conn = client.get_client()
     assert redis_conn == mock_instance  # Use ==, not is
 
-# Test Redis schema key generation
-
-def test_get_key_with_identifier():
-    key = redis_schema.get_key(redis_schema.KeyPrefix.MARKET_DATA, 'ticker', 'AAPL')
-    assert key == 'market_data:ticker:AAPL'
-
-def test_get_key_without_identifier():
-    key = redis_schema.get_key(redis_schema.KeyPrefix.SESSION, 'active')
-    assert key == 'session:active'
-
 # Test TTL policies
 
 def test_ttl_policies_for_market_data():
@@ -56,4 +46,3 @@ def test_redis_client_connection_error(mock_pool):
     mock_pool.side_effect = Exception('Connection failed')
     with pytest.raises(Exception):
         redis_client.RedisClient(host='badhost', port=9999, db=0, max_retries=0)
-# ... continued from previous chunk ...

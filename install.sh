@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -e
+
 # Colors for terminal output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -368,4 +370,21 @@ echo
 echo -e "${CYAN}To uninstall/reset the environment:${NC}"
 echo -e "  ${BOLD}./install.sh -u${NC}"
 echo
-echo -e "${GREEN}${BOLD}Happy trading with Trader App!${NC}" 
+echo -e "${GREEN}${BOLD}Happy trading with Trader App!${NC}"
+
+if [ "$1" == "keygen" ]; then
+  echo "Generating SSH key pair for Trader App API authentication..."
+  python3 src/trader_app/security/ssh_auth.py generate
+  echo "\nYour public key (copy this for the frontend or API client):"
+  cat ~/.traderapp_keys/id_rsa.pub
+  exit 0
+fi
+
+cat <<EOF
+Usage: ./install.sh [command]
+
+Commands:
+  keygen    Generate SSH key pair for API authentication and print public key
+
+Example:
+  ./install.sh keygen 
