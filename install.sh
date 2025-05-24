@@ -31,11 +31,8 @@ uninstall() {
     show_uninstall_header
     
     if [ "$1" != "--force" ]; then
-        # Ask for confirmation
-        echo -e "${RED}WARNING: This will delete your virtual environment and reset the project.${NC}"
-        echo -e "${RED}Any customizations you've made to the venv will be lost.${NC}"
-        echo -e "${YELLOW}Your code and .env file will be preserved.${NC}"
-        read -p "Are you sure you want to continue? (y/n) " -n 1 -r
+        # Update: Use yellow, inline, colored prompt for uninstall confirmation
+        read -n 1 -r -p $'\033[1;33mAre you sure you want to continue? (y/n)  \033[0m'
         echo
         if [[ ! $REPLY =~ ^[Yy]$ ]]; then
             echo -e "${GREEN}Uninstall cancelled.${NC}"
@@ -66,17 +63,20 @@ uninstall() {
     find . -type f -name "*.pyc" -delete 2>/dev/null
     echo -e "${GREEN}Python cache files removed.${NC}"
     
-    echo -e "${BLUE}==================================${NC}"
-    echo -e "${GREEN}Environment Reset Complete!${NC}"
-    echo -e "${BLUE}==================================${NC}"
-    echo 
-    echo -e "${CYAN}To reinstall the Trader App:${NC}"
-    echo -e "  ${BOLD}./install.sh${NC}"
+    # Remove SSH key and key folder for authentication reset
+    rm -rf ~/.traderapp_keys
+
+    echo -e "${BLUE}========================================${NC}"
+    echo -e "${RED}${BOLD}   Trader App Uninstall Complete!${NC}"
+    echo -e "${BLUE}========================================${NC}"
     echo
-    echo -e "${CYAN}Or to run without installation:${NC}"
-    echo -e "  ${BOLD}./trade.py${NC}"
+    echo -e "${CYAN}${BOLD}Next Steps:${NC}"
+    echo -e "  • To reinstall:                  ${BOLD}./install.sh${NC}"
+    echo -e "  • To run without install:        ${BOLD}./trade.py${NC}"
     echo
-    
+    echo -e "${GREEN}${BOLD}All environment files, caches, and keys have been removed.${NC}"
+    echo -e "${BLUE}========================================${NC}"
+    echo
     exit 0
 }
 
@@ -325,9 +325,8 @@ else
     echo -e "${YELLOW}Please make sure the run_tests.sh file exists in the project root${NC}"
 fi
 
-# Run tests after installation if user wants to
-echo -e "${YELLOW}Would you like to run tests now to verify installation? (y/n)${NC}"
-read -n 1 -r
+# Fix bug: use interactive, colored prompt for test run confirmation
+read -n 1 -r -p $'\033[1;33mWould you like to run tests now to verify installation? (y/n)  \033[0m' REPLY
 echo
 if [[ $REPLY =~ ^[Yy]$ ]]; then
     echo -e "${YELLOW}Running tests...${NC}"
@@ -340,51 +339,40 @@ if [[ $REPLY =~ ^[Yy]$ ]]; then
     fi
 fi
 
-echo -e "${BLUE}==================================${NC}"
-echo -e "${GREEN}${BOLD}Installation Complete!${NC}"
-echo -e "${BLUE}==================================${NC}"
-echo 
-echo -e "${CYAN}To run the Trader App:${NC}"
-echo -e "  ${BOLD}- Simply run: ./trade.py${NC}"
+# SSH Key Generation Section
+# Add: Generate a new SSH key pair for authentication before displaying the public key
+mkdir -p ~/.traderapp_keys
+ssh-keygen -t rsa -b 4096 -f ~/.traderapp_keys/id_rsa -N "" -q <<<y 2>/dev/null
+
+echo -e "${BLUE}========================================${NC}"
+echo -e "${CYAN}${BOLD}  Trader App: SSH Authentication Reset  ${NC}"
+echo -e "${BLUE}========================================${NC}"
 echo
-echo -e "${CYAN}For checking configuration:${NC}"
-echo -e "  ${BOLD}./trade.py --check-config${NC}"
+echo -e "${GREEN}${BOLD}Your New SSH Public Key (copy and paste into your frontend or API client):${NC}"
 echo
-echo -e "${CYAN}For custom environment file:${NC}"
-echo -e "  ${BOLD}./trade.py --env-file=path/to/custom/config.env${NC}"
+echo -e "${YELLOW}$(tail -n 1 ~/.traderapp_keys/id_rsa.pub)${NC}"
 echo
-echo -e "${CYAN}Environment Configuration:${NC}"
-echo -e "  ${BOLD}- .env.dev${NC} for development/paper trading"
-echo -e "  ${BOLD}- .env${NC} for production/live trading"
+echo -e "${BLUE}========================================${NC}"
 echo
-echo -e "${CYAN}For debug mode:${NC}"
-echo -e "  ${BOLD}./trade.py --debug${NC}"
+
+# Installation Complete Section
+echo -e "${BLUE}========================================${NC}"
+echo -e "${GREEN}${BOLD}   Installation Complete!${NC}"
+echo -e "${BLUE}========================================${NC}"
 echo
-echo -e "${CYAN}Redis Docker Container:${NC}"
-echo -e "  ${BOLD}- Start: docker-compose up -d redis${NC}"
-echo -e "  ${BOLD}- Stop: docker-compose down${NC}"
+
+# Next Steps
+echo -e "${CYAN}${BOLD}Next Steps:${NC}"
+echo -e "  • Run the Trader App:           ${BOLD}./trade.py${NC}"
+echo -e "  • Check configuration:          ${BOLD}./trade.py --check-config${NC}"
+echo -e "  • Use custom env file:          ${BOLD}./trade.py --env-file=path/to/custom/config.env${NC}"
+echo -e "  • Environment config:           .env.dev (dev), .env (prod)"
+echo -e "  • Enable debug mode:            ${BOLD}./trade.py --debug${NC}"
+echo -e "  • Redis Docker (start/stop):    ${BOLD}docker-compose up -d redis${NC} / ${BOLD}docker-compose down${NC}"
+echo -e "  • Run all tests:                ${BOLD}./run_tests.sh${NC}"
+echo -e "  • Uninstall/reset:              ${BOLD}./install.sh -u${NC}"
 echo
-echo -e "${CYAN}To run all tests:${NC}"
-echo -e "  ${BOLD}./run_tests.sh${NC}"
-echo
-echo -e "${CYAN}To uninstall/reset the environment:${NC}"
-echo -e "  ${BOLD}./install.sh -u${NC}"
-echo
+
+# Closing line
 echo -e "${GREEN}${BOLD}Happy trading with Trader App!${NC}"
-
-if [ "$1" == "keygen" ]; then
-  echo "Generating SSH key pair for Trader App API authentication..."
-  python3 src/trader_app/security/ssh_auth.py generate
-  echo "\nYour public key (copy this for the frontend or API client):"
-  cat ~/.traderapp_keys/id_rsa.pub
-  exit 0
-fi
-
-cat <<EOF
-Usage: ./install.sh [command]
-
-Commands:
-  keygen    Generate SSH key pair for API authentication and print public key
-
-Example:
-  ./install.sh keygen 
+echo -e "${BLUE}========================================${NC}" 
