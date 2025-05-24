@@ -61,7 +61,9 @@ def test_get_stock_bars_success(mock_data_client):
     mock_instance.get_stock_bars.return_value = [MagicMock()]
     service = AlpacaService(API_KEY, SECRET_KEY, API_URL)
     result = service.get_stock_bars("AAPL")
-    assert result == [MagicMock()]
+    assert isinstance(result, list)
+    assert len(result) == 1
+    assert isinstance(result[0], MagicMock)
 
 @patch("trader_app.services.alpaca_service.StockHistoricalDataClient")
 def test_get_latest_trade_success(mock_data_client):

@@ -296,31 +296,6 @@ else
     echo -e "${YELLOW}Please install Redis manually or use Docker for containerized Redis.${NC}"
 fi
 
-# Create a shell alias file for easier execution
-echo -e "${YELLOW}Creating command shortcut...${NC}"
-cat > ${PWD}/trader_app-alias.sh << EOF
-#!/bin/sh
-# Add this to your .bashrc or .zshrc with:
-# source /path/to/trader_app-alias.sh
-
-# Trader App activation
-trader_app_activate() {
-  . "${PWD}/.venv/bin/activate"
-  echo "Trader App environment activated"
-}
-
-# Run the Trader App
-trader_app() {
-  if [ "\$VIRTUAL_ENV" = "" ]; then
-    . "${PWD}/.venv/bin/activate"
-  fi
-  python -m trader_app "\$@"
-}
-EOF
-chmod +x ${PWD}/trader_app-alias.sh
-echo -e "${GREEN}Created ${PWD}/trader_app-alias.sh${NC}"
-echo -e "${YELLOW}Add to your shell configuration with: source ${PWD}/trader_app-alias.sh${NC}"
-
 # Make trade.py executable
 if [ -f "trade.py" ]; then
     echo -e "${YELLOW}Making trade.py executable...${NC}"

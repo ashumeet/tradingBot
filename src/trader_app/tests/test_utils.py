@@ -8,3 +8,6 @@ Add reusable test utilities and mock objects here.
 def sample_helper(x, y):
     """Return the sum of x and y (example utility)."""
     return x + y 
+
+def test_sample_helper():
+    assert sample_helper(2, 3) == 5 
