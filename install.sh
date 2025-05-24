@@ -13,14 +13,14 @@ NC='\033[0m' # No Color
 # Function to display the header
 show_header() {
     echo -e "${BLUE}==================================${NC}"
-    echo -e "${BLUE}  Market Trader Installation Script  ${NC}"
+    echo -e "${BLUE}  Trader App Installation Script  ${NC}"
     echo -e "${BLUE}==================================${NC}"
 }
 
 # Function to display uninstall header
 show_uninstall_header() {
     echo -e "${RED}==================================${NC}"
-    echo -e "${RED}  Market Trader Uninstall Process    ${NC}"
+    echo -e "${RED}  Trader App Uninstall Process    ${NC}"
     echo -e "${RED}==================================${NC}"
 }
 
@@ -50,7 +50,7 @@ uninstall() {
 
     # Remove virtual environment
     echo -e "${YELLOW}Removing virtual environment...${NC}"
-    rm -rf venv
+    rm -rf .venv
     echo -e "${GREEN}Virtual environment removed.${NC}"
 
     # Remove any pth files or other configuration
@@ -68,7 +68,7 @@ uninstall() {
     echo -e "${GREEN}Environment Reset Complete!${NC}"
     echo -e "${BLUE}==================================${NC}"
     echo 
-    echo -e "${CYAN}To reinstall the Market Trader:${NC}"
+    echo -e "${CYAN}To reinstall the Trader App:${NC}"
     echo -e "  ${BOLD}./install.sh${NC}"
     echo
     echo -e "${CYAN}Or to run without installation:${NC}"
@@ -135,10 +135,14 @@ else
     docker_compose_installed=false
 fi
 
+# Remove any existing virtual environment before creating a new one
+echo -e "${YELLOW}Removing any existing virtual environment (venv or .venv)...${NC}"
+rm -rf venv .venv
+
 # Create virtual environment if it doesn't exist
-if [ ! -d "venv" ]; then
+if [ ! -d ".venv" ]; then
     echo -e "${YELLOW}Creating virtual environment...${NC}"
-    python3 -m venv venv
+    python3 -m venv .venv
     if [ $? -ne 0 ]; then
         echo -e "${RED}Failed to create virtual environment${NC}"
         exit 1
@@ -150,12 +154,17 @@ fi
 
 # Activate virtual environment
 echo -e "${YELLOW}Activating virtual environment...${NC}"
-source venv/bin/activate
+source .venv/bin/activate
 if [ $? -ne 0 ]; then
     echo -e "${RED}Failed to activate virtual environment${NC}"
     exit 1
 fi
 echo -e "${GREEN}Virtual environment activated${NC}"
+
+# Set PYTHONPATH to include src for proper imports
+echo -e "${YELLOW}Setting PYTHONPATH to include src directory...${NC}"
+export PYTHONPATH="${PWD}/src:$PYTHONPATH"
+echo -e "${GREEN}PYTHONPATH set to: $PYTHONPATH${NC}"
 
 # Ensure pip is up to date in the virtual environment
 echo -e "${YELLOW}Updating pip...${NC}"
@@ -177,11 +186,11 @@ fi
 echo -e "${GREEN}Requirements installed successfully${NC}"
 
 # Install package in development mode using a different approach
-echo -e "${YELLOW}Installing the Market Trader package...${NC}"
-# Create a minimal empty pth file to make the package available
-mkdir -p venv/lib/python${python_version}/site-packages/
-cat > venv/lib/python${python_version}/site-packages/markettrader.pth << EOF
-${PWD}/src
+echo -e "${YELLOW}Installing the Trader App package...${NC}"
+# Create a minimal .pth file to make the package available
+mkdir -p .venv/lib/python${python_version}/site-packages/
+cat > .venv/lib/python${python_version}/site-packages/trader_app.pth << EOF
+${PWD}/src/trader_app
 EOF
 if [ $? -ne 0 ]; then
     echo -e "${RED}Failed to install package${NC}"
@@ -287,30 +296,30 @@ else
     echo -e "${YELLOW}Please install Redis manually or use Docker for containerized Redis.${NC}"
 fi
 
-# Create a bash alias file for easier execution
+# Create a shell alias file for easier execution
 echo -e "${YELLOW}Creating command shortcut...${NC}"
-cat > ${PWD}/markettrader-alias.sh << EOF
-#!/bin/bash
+cat > ${PWD}/trader_app-alias.sh << EOF
+#!/bin/sh
 # Add this to your .bashrc or .zshrc with:
-# source /path/to/markettrader-alias.sh
+# source /path/to/trader_app-alias.sh
 
-# Market Trader activation
-markettrader_activate() {
-  source "${PWD}/venv/bin/activate"
-  echo "Market Trader environment activated"
+# Trader App activation
+trader_app_activate() {
+  . "${PWD}/.venv/bin/activate"
+  echo "Trader App environment activated"
 }
 
-# Run the Market Trader
-markettrader() {
-  if [[ \$VIRTUAL_ENV != *"marketTrader"* ]]; then
-    source "${PWD}/venv/bin/activate"
+# Run the Trader App
+trader_app() {
+  if [ "\$VIRTUAL_ENV" = "" ]; then
+    . "${PWD}/.venv/bin/activate"
   fi
-  python -m src.markettrader.__main__ \$@
+  python -m trader_app "\$@"
 }
 EOF
-chmod +x ${PWD}/markettrader-alias.sh
-echo -e "${GREEN}Created ${PWD}/markettrader-alias.sh${NC}"
-echo -e "${YELLOW}Add to your shell configuration with: source ${PWD}/markettrader-alias.sh${NC}"
+chmod +x ${PWD}/trader_app-alias.sh
+echo -e "${GREEN}Created ${PWD}/trader_app-alias.sh${NC}"
+echo -e "${YELLOW}Add to your shell configuration with: source ${PWD}/trader_app-alias.sh${NC}"
 
 # Make trade.py executable
 if [ -f "trade.py" ]; then
@@ -321,7 +330,7 @@ fi
 
 # Verify installation by running a check
 echo -e "${YELLOW}Verifying installation...${NC}"
-python -c "import sys; sys.path.insert(0, '${PWD}'); from src.markettrader.config import get_secure_config_summary; print('✅ Package can be imported successfully')"
+python -c "import sys; sys.path.insert(0, '${PWD}'); import trader_app; print('✅ Package can be imported successfully')"
 if [ $? -ne 0 ]; then
     echo -e "${RED}Warning: Package import verification failed${NC}"
     echo -e "${YELLOW}You may still be able to run the trader using ./trade.py${NC}"
@@ -358,7 +367,7 @@ echo -e "${BLUE}==================================${NC}"
 echo -e "${GREEN}${BOLD}Installation Complete!${NC}"
 echo -e "${BLUE}==================================${NC}"
 echo 
-echo -e "${CYAN}To run the Market Trader:${NC}"
+echo -e "${CYAN}To run the Trader App:${NC}"
 echo -e "  ${BOLD}- Simply run: ./trade.py${NC}"
 echo
 echo -e "${CYAN}For checking configuration:${NC}"
@@ -384,4 +393,4 @@ echo
 echo -e "${CYAN}To uninstall/reset the environment:${NC}"
 echo -e "  ${BOLD}./install.sh -u${NC}"
 echo
-echo -e "${GREEN}${BOLD}Happy trading!${NC}" 
+echo -e "${GREEN}${BOLD}Happy trading with Trader App!${NC}" 

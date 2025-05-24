@@ -8,15 +8,18 @@ BLUE='\033[0;34m'
 BOLD='\033[1m'
 NC='\033[0m' # No Color
 
+# Ensure src/ is in the Python module search path
+export PYTHONPATH="${PWD}/src:$PYTHONPATH"
+
 # Check if virtual environment exists
-if [ ! -d "venv" ]; then
+if [ ! -d ".venv" ]; then
     echo -e "${RED}Error: Virtual environment not found${NC}"
     echo -e "${YELLOW}Please run './install.sh' first to set up the environment${NC}"
     exit 1
 fi
 
 # Try activating the virtual environment
-if ! source venv/bin/activate 2>/dev/null; then
+if ! source .venv/bin/activate 2>/dev/null; then
     echo -e "${RED}Error: Could not activate virtual environment${NC}"
     echo -e "${YELLOW}Please run './install.sh' first to set up the environment properly${NC}"
     exit 1
@@ -34,8 +37,8 @@ echo -e "${BLUE}==================================${NC}"
 echo -e "${BLUE}  Running All Tests  ${NC}"
 echo -e "${BLUE}==================================${NC}"
 
-# Find all test files recursively in the tests directory
-TEST_FILES=$(find src/markettrader/tests -name "test_*.py" -type f | sort)
+# Find all test files recursively in the new tests directory
+TEST_FILES=$(find src/trader_app/tests -name "test_*.py" -type f | sort)
 TOTAL_FILES=$(echo "$TEST_FILES" | wc -l)
 TOTAL_FILES=$(echo "$TOTAL_FILES" | tr -d ' ')
 PASSED_FILES=0
