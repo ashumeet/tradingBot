@@ -1,6 +1,6 @@
 from trader_app.models.order import NewOrderRequest, OrderSubmissionResponse
 from trader_app.services.alpaca_service import AlpacaService
-from fastapi import HTTPException
+from trader_app.services.exceptions import OrderValidationError, AlpacaApiError, InternalServerError
 from typing import Optional
 
 class OrderService:
@@ -13,6 +13,9 @@ class OrderService:
         Raises HTTPException on error.
         """
         try:
+            # Example validation (expand as needed)
+            if not order_request.symbol.isupper():
+                raise OrderValidationError("Symbol must be uppercase", details={"symbol": order_request.symbol})
             # Map NewOrderRequest to Alpaca order params
             alpaca_order = {
                 "symbol": order_request.symbol,
@@ -21,37 +24,41 @@ class OrderService:
                 "type": order_request.type,
                 "time_in_force": order_request.time_in_force,
             }
-            if order_request.limit_price is not None:
+            if order_request.limit_price:
                 alpaca_order["limit_price"] = order_request.limit_price
             if order_request.client_order_id:
                 alpaca_order["client_order_id"] = order_request.client_order_id
 
-            # Submit order to Alpaca
-            alpaca_response = self.alpaca_service.submit_order(**alpaca_order)
+            # Call Alpaca API
+            try:
+                response = self.alpaca_service.submit_order(**alpaca_order)
+            except Exception as e:
+                raise AlpacaApiError("Failed to submit order to Alpaca", details=str(e))
 
-            # Map Alpaca response to OrderSubmissionResponse
+            # Map response to OrderSubmissionResponse
             return OrderSubmissionResponse(
-                id=alpaca_response["id"],
-                client_order_id=alpaca_response.get("client_order_id", ""),
-                created_at=alpaca_response["created_at"],
-                updated_at=alpaca_response.get("updated_at"),
-                submitted_at=alpaca_response.get("submitted_at"),
-                filled_at=alpaca_response.get("filled_at"),
-                expired_at=alpaca_response.get("expired_at"),
-                canceled_at=alpaca_response.get("canceled_at"),
-                failed_at=alpaca_response.get("failed_at"),
-                asset_id=alpaca_response["asset_id"],
-                symbol=alpaca_response["symbol"],
-                asset_class=alpaca_response["asset_class"],
-                qty=alpaca_response["qty"],
-                filled_qty=alpaca_response["filled_qty"],
-                type=alpaca_response["type"],
-                side=alpaca_response["side"],
-                time_in_force=alpaca_response["time_in_force"],
-                limit_price=alpaca_response.get("limit_price"),
-                stop_price=alpaca_response.get("stop_price"),
-                status=alpaca_response["status"]
+                id=response["id"],
+                client_order_id=response.get("client_order_id", ""),
+                created_at=response["created_at"],
+                updated_at=response.get("updated_at"),
+                submitted_at=response.get("submitted_at"),
+                filled_at=response.get("filled_at"),
+                expired_at=response.get("expired_at"),
+                canceled_at=response.get("canceled_at"),
+                failed_at=response.get("failed_at"),
+                asset_id=response["asset_id"],
+                symbol=response["symbol"],
+                asset_class=response["asset_class"],
+                qty=response["qty"],
+                filled_qty=response["filled_qty"],
+                type=response["type"],
+                side=response["side"],
+                time_in_force=response["time_in_force"],
+                limit_price=response.get("limit_price"),
+                stop_price=response.get("stop_price"),
+                status=response["status"]
             )
+        except (OrderValidationError, AlpacaApiError):
+            raise
         except Exception as e:
-            # Map known Alpaca errors to HTTP 400/502, else 500
-            raise HTTPException(status_code=502, detail=f"Order submission failed: {e}")
+            raise InternalServerError(details=str(e))

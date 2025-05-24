@@ -4,12 +4,15 @@ This file allows running the app via `python trade.py` or `python -m trader_app`
 """
 
 from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse
 from trader_app.api.orders import router as orders_router
+from trader_app.services.exception_handlers import register_exception_handlers
 import uvicorn
 import threading
 import sys
 
 app = FastAPI(title="Trader App API")
+register_exception_handlers(app)
 
 @app.get("/")
 def root():
